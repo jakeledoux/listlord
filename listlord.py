@@ -129,7 +129,7 @@ def XML_to_spotify(playlist: Element):
     desc = desc_elem.text \
         if (desc_elem := playlist.find('description')) is not None else ''
     playlist_ID = sp.user_playlist_create(
-        user_ID, 'DEBUG:'+playlist.find('title').text,
+        user_ID, playlist.find('title').text,
         description=desc
     )['id']
     tracklist = list()
@@ -158,48 +158,3 @@ def XML_to_spotify(playlist: Element):
 
     sp.user_playlist_add_tracks(user_ID, playlist_ID, tracklist)
 
-# DEBUG SAMPLE DATA ###########################################################
-playlist = {
-    'title': 'Daydream Theater',
-    'description': 'Dream Theater at their happiest.',
-    'author': {
-        'name': 'Jake Ledoux',
-        'email': 'contactjakeledoux@gmail.com',
-        'website': 'https://github.com/jakeledoux/playlists'
-    },
-    'tracklist': {
-        'shuffle': True,
-        'tracks': [
-            {
-                'title': 'Behind the Veil',
-                'artists': [{'name': 'Dream Theater',
-                             'mbid': '28503ab7-8bf2-4666-a7bd-2644bfc7cb1d'}],
-                'album': {'name': 'Dream Theater',
-                          'mbid': '1b537b55-6543-436e-b569-91fc789eff43'},
-                'mbid': '1fe57f44-aa27-4639-83ed-a305b0ccadca',
-                'duration': 412
-            },
-            {
-                'title': 'A Rite of Passage',
-                'artists': [{'name': 'Dream Theater',
-                             'mbid':'28503ab7-8bf2-4666-a7bd-2644bfc7cb1d'}],
-                'album': {'name': 'Black Clouds & Silver Linings',
-                          'mbid': 'ba5ef564-b2f8-3bb5-9d8f-57828cfa767c'},
-                'mbid': 'b5cc94ec-e1c1-4dba-aa7f-135ce57e7931',
-                'duration': 516
-            }
-        ]
-    }
-}
-
-# DEBUG Spotify to XML
-# uri = 'spotify:playlist:4Nwr2lG6k9ydCtzxC6LAIv'
-# play = spotify_to_dict(uri)
-# from pprint import pprint
-# pprint(play)
-
-# DEBUG XML to Spotify
-# sp = init_spotify()
-# filename = 'GenX_Ultor.list'
-# play = load_XML(filename)
-# XML_to_spotify(play)
