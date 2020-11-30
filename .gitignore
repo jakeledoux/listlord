@@ -1,4 +1,5 @@
 venv
 tmpfile
 .DS_Store
+.cache
 *.list
