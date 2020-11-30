@@ -8,7 +8,6 @@
     https://jakeledoux.com
 """
 
-import os
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from xml.etree.ElementTree import Element, fromstring, tostring
