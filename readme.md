@@ -1,5 +1,7 @@
 # Listlord
 
+> :warning: **This project is still in a pre-alpha state.** Use at your own risk.
+
 Open source software and file-format specification for the creation and 
 consumption of universal playlists.
 
