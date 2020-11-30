@@ -11,16 +11,25 @@ text characters should be UTF-8 using Unix-style LF line-endings.
 
 The structure will be as follows:
 * `title`: The playlist's title
-* `description`: [Optional] The playlist's description limited to 140 characters.
-* `image`: [Optional]
-  * `href`: [Optional] Web link to the playlist's desired image file.
-  * `bytes`: [Optional] HTML-style binary image src.
-* `author`: [Optional]
+* `description`: *[Optional]* The playlist's description limited to 140 characters.
+* `image`: *[Optional]*
+  * `href`: *[Optional]* Web link to the playlist's desired image file.
+  * `bytes`: *[Optional]* HTML-style binary image src.
+* `author`: *[Optional]*
   * `name`: The author's name (preferably FIRST LAST but anything goes)
-  * `email`: [Optional] The author's email if they want people to be able to get in touch with them.
-  * `website`: [Optional] The author's website. Could be social media or even a github repo with their other playlists. Again, anything goes but there is an unfortunate potential for troll-links/spam.
+  * `email`: *[Optional]* The author's email if they want people to be able to get in touch with them.
+  * `website`: *[Optional]* The author's website. Could be social media or even a github repo with their other playlists. Again, anything goes but there is an unfortunate potential for troll-links/spam.
 * `contents`:
-  * `shuffle` (bool): [Optional (Defaults to false)] If true, this playlist is meant to be heard in random order. If false, this playlist has a specific order that the author intended to be preserved.
+  * `shuffle` (bool): *[Optional (Defaults to false)]* If true, this playlist is meant to be heard in random order. If false, this playlist has a specific order that the author intended to be preserved.
   * `tracks`:
-    * `track`: [Repeatable]
+    * `track`: *[Repeatable]*
       * `title`: Track's title
+      * `artists`:
+        * `artist`: *[Repeatable]*
+          * `name`: The artist's name
+          * `mbid`: *[Optional]* The artist's MusicBrainz ID
+      * `album`:
+          * `name`: The album's name
+          * `mbid`: *[Optional]* The album's MusicBrainz ID
+      * `mbid`: *[Optional]* The track's MusicBrainz ID
+      * `duration`: *[Optional]* The track's duration in seconds
