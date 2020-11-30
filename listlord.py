@@ -10,19 +10,29 @@
 
 import os
 import spotipy
-from xml.etree.ElementTree import Element, SubElement, Comment, tostring
+from spotipy.oauth2 import SpotifyOAuth
+from xml.etree.ElementTree import Element, fromstring, tostring
 
 LISTLORD_VERSION = '0.0.1'
-SP_CLIENT_ID = 'a3cafa0783964e33b45fd7662cdf909b'
-SP_CLIENT_SECRET = '14f1117a0fcc477482f8a6cd78e6248f'
-spotify = None
+SPOTIFY_CLIENT_ID = 'a3cafa0783964e33b45fd7662cdf909b'
+SPOTIFY_CLIENT_SECRET = '14f1117a0fcc477482f8a6cd78e6248f'
+SPOTIFY = None
+SP_SCOPE = ' '.join(('playlist-read-private',  'playlist-modify-private',
+                     'playlist-modify-public'))
 
 
 def init_spotify():
-    global spotify
-    if spotify is None:
-        spotify = spotipy.Spotify()
-    return spotify
+    global SPOTIFY
+    global SP_SCOPE
+    if SPOTIFY is None:
+        SPOTIFY = spotipy.Spotify(
+            auth_manager=SpotifyOAuth(client_id=SPOTIFY_CLIENT_ID,
+                                      client_secret=SPOTIFY_CLIENT_SECRET,
+                                      redirect_uri='http://0.0.0.0',
+                                      scope=SP_SCOPE)
+        )
+    return SPOTIFY
+
 
 def filename_encode(text):
     keep_chars = ('_', '-')
@@ -33,10 +43,38 @@ def filename_encode(text):
 
 
 def spotify_to_dict(playlist_uri):
-    spotify = init_spotify()
+    sp = init_spotify()
+    playlist = sp.playlist(playlist_uri)
+
+    pl_json = {
+        'title': playlist.get('name'),
+        'tracklist': {'shuffle': False},
+        'author': {
+            'name': playlist['owner']['display_name'],
+            'website': playlist['owner']['external_urls']['spotify']
+        }
+    }
+    if (desc := playlist.get('description')):
+        pl_json['description'] = desc
+    if (images := playlist.get('images')):
+        pl_json['image'] = {'href': images[0]['url']}
+
+    tracklist = list()
+    # TODO: Get ALL tracks when tracklist > 100
+    for track in playlist['tracks']['items']:
+        track = track['track']
+        track_json = {
+            'title': track['name'],
+            'duration': track['duration_ms'] // 1000,
+            'album': {'name': track['album']['name']},
+            'artists': [{'name': artist['name']} for artist in track['artists']]
+        }
+        tracklist.append(track_json)
+    pl_json['tracklist']['tracks'] = tracklist
+    return pl_json
 
 
-def XML_from_dict(playlist: dict):
+def dict_to_XML(playlist: dict):
     XML_playlist = Element('ListLordPlaylist', version=LISTLORD_VERSION)
     for key, value in playlist.items():
         elem = Element(key)
@@ -70,12 +108,55 @@ def XML_from_dict(playlist: dict):
     return XML_playlist
 
 
+def load_XML(filename: str):
+    with open(filename, 'r') as f:
+        XML_playlist = fromstring(f.read())
+    return XML_playlist
+
+
 def write_XML(playlist: Element, filename=None):
     filename = filename or \
             f'{filename_encode(playlist.find("title").text)}.list'
     with open(filename, 'w') as f:
         xml_string = tostring(playlist, encoding='unicode', method='xml')
         f.write(xml_string)
+    return filename
+
+
+def XML_to_spotify(playlist: Element):
+    sp = init_spotify()
+    user_ID = sp.current_user()['id']
+    desc = desc_elem.text \
+        if (desc_elem := playlist.find('description')) is not None else ''
+    playlist_ID = sp.user_playlist_create(
+        user_ID, 'DEBUG:'+playlist.find('title').text,
+        description=desc
+    )['id']
+    tracklist = list()
+    for track in playlist.find('tracklist'):
+        title = track.find('title').text
+        album = track.find('album').get('name')
+        duration = int(track.find('duration').text)
+        primary_artist = track.find('artists')[0].get('name')
+        artist_names = [a.get('name') for a in track.find('artists')]
+        results = sp.search(q=f'{title} {primary_artist}')
+
+        # Score results
+        scores = list()
+        for result in results['tracks']['items']:
+            score = 0
+            if result['name'] == title:
+                score += 10
+            if result['album']['name'] == album:
+                score += 10
+            for artist in result['artists']:
+                if artist['name'] in artist_names:
+                    score += 10
+            score -= abs(duration - (result['duration_ms'] // 1000))
+            scores.append((score, result['id']))
+        tracklist.append(sorted(scores, key=lambda x: x[0], reverse=True)[0][1])
+
+    sp.user_playlist_add_tracks(user_ID, playlist_ID, tracklist)
 
 # DEBUG SAMPLE DATA ###########################################################
 playlist = {
@@ -111,6 +192,14 @@ playlist = {
     }
 }
 
-playlist = spotify_to_dict('spotify:playlist:48623M5bfynlI4USZGpVVs')
-from pprint import pprint
-pprint(playlist)
+# DEBUG Spotify to XML
+# uri = 'spotify:playlist:4Nwr2lG6k9ydCtzxC6LAIv'
+# play = spotify_to_dict(uri)
+# from pprint import pprint
+# pprint(play)
+
+# DEBUG XML to Spotify
+# sp = init_spotify()
+# filename = 'GenX_Ultor.list'
+# play = load_XML(filename)
+# XML_to_spotify(play)
